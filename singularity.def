@@ -8,7 +8,8 @@ From: ubuntu:20.04
     This container runs QTLtools
 
 %environment
-    export=PATH=$PATH:/opt/qtltools/bin
+    PATH=/opt/qtltools/bin
+    export PATH
 
 %post
     # add paths
