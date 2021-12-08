@@ -1,0 +1,68 @@
+BootStrap: docker
+From: ubuntu:20.04
+
+%labels
+    Maintainer Matthew Flister
+
+%help
+    This container runs QTLtools
+
+%environment
+    export=PATH=$PATH:/opt/qtltools/bin
+
+%post
+    # add paths
+  
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc-multilib \
+        wget \
+        git \
+        ca-certificates \
+        g++ \
+        gcc \
+        gfortran \
+        make \
+        autoconf \
+        automake \
+        libtool \
+        zlib1g-dev \
+        liblzma-dev \
+        libbz2-dev \
+        lbzip2 \
+        libgsl-dev \
+        libblas-dev \
+        libx11-dev \
+        libboost1.71-all-dev \
+        libreadline-dev \
+        libxt-dev \
+        libpcre2-dev \
+        libcurl4-openssl-dev
+    apt-get clean
+
+    # add deps
+    mkdir /opt/qtltools-deps
+    cd /opt/qtltools-deps && wget https://cran.r-project.org/src/base/R-4/R-4.0.2.tar.gz
+    tar zxvf R-4.0.2.tar.gz && rm -rf R-4.0.2.tar.gz && cd R-4.0.2
+    ./configure
+    cd src/nmath/standalone/
+    make
+
+    cd /opt/qtltools-deps && wget https://github.com/samtools/htslib/releases/download/1.10.2/htslib-1.10.2.tar.bz2
+    tar jxvf htslib-1.10.2.tar.bz2 && rm -rf htslib-1.10.2.tar.bz2 && cd htslib-1.10.2
+    ./configure
+    make
+
+    # install qtltools
+    cd /opt && wget https://qtltools.github.io/qtltools/binaries/QTLtools_1.3.1_source.tar.gz
+    tar xvf QTLtools_1.3.1_source.tar.gz && rm -rf QTLtools_1.3.1_source.tar.gz && cd qtltools
+    sed -i '0,/BOOST_INC/{s/BOOST_INC\=/BOOST_INC\=\/usr\/include/}' Makefile
+    sed -i '0,/BOOST_LIB/{s/BOOST_LIB\=/BOOST_LIB\=\/usr\/lib\/x86_64-linux-gnu/}' Makefile
+    sed -i '0,/RMATH_INC/{s/RMATH_INC\=/RMATH_INC\=\/opt\/qtltools-deps\/R-4.0.2\/src\/include/}' Makefile
+    sed -i '0,/RMATH_LIB/{s/RMATH_LIB\=/RMATH_LIB\=\/opt\/qtltools-deps\/R-4.0.2\/src\/nmath\/standalone/}' Makefile
+    sed -i '0,/HTSLD_INC/{s/HTSLD_INC\=/HTSLD_INC\=\/opt\/qtltools-deps\/htslib-1.10.2/}' Makefile
+    sed -i '0,/HTSLD_LIB/{s/HTSLD_LIB\=/HTSLD_LIB\=\/opt\/qtltools-deps\/htslib-1.10.2/}' Makefile
+    make -j 4
+    
+
